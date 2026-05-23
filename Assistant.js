@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import NodeCache from "node-cache";
 
 dotenv.config();
 
@@ -8,6 +9,8 @@ const client = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
 });
 
+const myCache = new NodeCache({stdTTL: 60*60*24}) //24 hours storage window
+ 
 function cleanText(text) {
   return text
     .replace(/[*#`>|~_-]/g, "") // remove markdown symbols
@@ -17,7 +20,7 @@ function cleanText(text) {
     .trim();
 }
 
-export async function askAssistant(userQuestion, mood) {
+export async function askAssistant(userQuestion, mood, threadId) {
   // 🔵 MOOD PROMPTS
   let moodPrompt = "";
 
@@ -154,16 +157,20 @@ Core Behavior Rules:
 You adapt your emotional tone based on the MOOD STYLE provided.
 `;
 
-  const messages = [
+  const defaultMessages = [
     {
       role: "system",
       content: systemBase + "\n\nMOOD STYLE:\n" + moodPrompt,
-    },
-    {
-      role: "user",
-      content: userQuestion,
-    },
+    }
   ];
+
+  const messages = myCache.get(threadId) ?? defaultMessages; //if no message in current thread send default messages
+
+
+  messages.push({
+    role:'user',
+    content: userQuestion
+  })
 
   const response = await client.chat.completions.create({
     model: "openai/gpt-oss-20b",
@@ -171,7 +178,15 @@ You adapt your emotional tone based on the MOOD STYLE provided.
     temperature: 0.5,
   });
 
+
   let content = response.choices[0].message.content;
   content = cleanText(content);
+
+  messages.push({
+    role: "assistant",
+    content: content
+  })
+
+  myCache.set(threadId, messages);
   return content;
 }
