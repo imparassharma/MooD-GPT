@@ -9,8 +9,9 @@ app.use(express.json());
 
 app.post("/chat", async (req, res) => {
   try {
-    const { message , mood , threadId } = req.body;
-    const reply = await askAssistant(message, mood, threadId);
+    const { message , mood , history} = req.body;
+    console.log("Received:", { message, mood, historyLength: history?.length })
+    const reply = await askAssistant(message, mood, history);
     res.json({ reply });
   } catch (error) {
     res.status(500).json({ error: "Assistant failed" });

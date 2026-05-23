@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import NodeCache from "node-cache";
+//import NodeCache from "node-cache";
 
 dotenv.config();
 
@@ -9,7 +9,7 @@ const client = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
 });
 
-const myCache = new NodeCache({stdTTL: 60*60*24}) //24 hours storage window
+//const myCache = new NodeCache({stdTTL: 60*60*24}) //24 hours storage window
  
 function cleanText(text) {
   return text
@@ -20,7 +20,7 @@ function cleanText(text) {
     .trim();
 }
 
-export async function askAssistant(userQuestion, mood, threadId) {
+export async function askAssistant(userQuestion, mood, history) {
   // 🔵 MOOD PROMPTS
   let moodPrompt = "";
 
@@ -156,21 +156,10 @@ Core Behavior Rules:
 - Focus only on the answer.
 You adapt your emotional tone based on the MOOD STYLE provided.
 `;
+const systemMessage = { role: "system", content: systemBase + moodPrompt };
 
-  const defaultMessages = [
-    {
-      role: "system",
-      content: systemBase + "\n\nMOOD STYLE:\n" + moodPrompt,
-    }
-  ];
-
-  const messages = myCache.get(threadId) ?? defaultMessages; //if no message in current thread send default messages
-
-
-  messages.push({
-    role:'user',
-    content: userQuestion
-  })
+  const messages = [systemMessage,...history]
+  //const messages = myCache.get(threadId) ?? defaultMessages; //if no message in current thread send default messages
 
   const response = await client.chat.completions.create({
     model: "openai/gpt-oss-20b",
@@ -182,14 +171,6 @@ You adapt your emotional tone based on the MOOD STYLE provided.
   let content = response.choices[0].message.content;
   content = cleanText(content);
 
-  messages.push({
-    role: "assistant",
-    content: content
-  })
-
-  myCache.set(threadId, messages);
-  console.log("Cache keys:", myCache.keys());
-  console.log("Cache stats:", myCache.getStats());
-  console.log("Current thread messages:", myCache.get(threadId));
+  //myCache.set(threadId, messages);
   return content;
 }
