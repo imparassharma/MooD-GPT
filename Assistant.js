@@ -188,5 +188,8 @@ You adapt your emotional tone based on the MOOD STYLE provided.
   })
 
   myCache.set(threadId, messages);
+  console.log("Cache keys:", myCache.keys());
+  console.log("Cache stats:", myCache.getStats());
+  console.log("Current thread messages:", myCache.get(threadId));
   return content;
 }
