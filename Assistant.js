@@ -20,7 +20,7 @@ function cleanText(text) {
     .trim();
 }
 
-export async function askAssistant(userQuestion, mood, history) {
+export async function askAssistant(userQuestion, mood, history=[]) {
   // 🔵 MOOD PROMPTS
   let moodPrompt = "";
 
@@ -158,7 +158,7 @@ You adapt your emotional tone based on the MOOD STYLE provided.
 `;
 const systemMessage = { role: "system", content: systemBase + moodPrompt };
 
-  const messages = [systemMessage,...history]
+  const messages = [systemMessage,...(history ?? [])]
   //const messages = myCache.get(threadId) ?? defaultMessages; //if no message in current thread send default messages
 
   const response = await client.chat.completions.create({
